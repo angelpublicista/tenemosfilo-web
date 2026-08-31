@@ -1,69 +1,156 @@
-import Image from "next/image";
+import Link from "next/link";
 
-export default function Home() {
+import { Aparece } from "@/components/aparece";
+import { TarjetaExperiencia } from "@/components/experiencias/tarjeta-experiencia";
+import { Buscador } from "@/components/inicio/buscador";
+import { TituloAnimado } from "@/components/inicio/titulo-animado";
+import { VideoFondo } from "@/components/inicio/video-fondo";
+import { listarCategorias, listarDestacadas } from "@/lib/api/experiences";
+
+// La portada se regenera cada pocos minutos en vez de renderizarse por
+// visitante: el límite del API es de 300 peticiones por minuto para todo el
+// sitio.
+export const revalidate = 300;
+
+/**
+ * Las frases del titular, heredadas del sitio en WordPress: son las que el
+ * equipo ya usaba para describir el catálogo.
+ */
+const FRASES = [
+  "Clases de cocina",
+  "Talleres de trabajo en equipo",
+  "Turismo gastronómico",
+  "Momentos clandestinos",
+];
+
+export default async function Portada() {
+  // Las categorías salen del catálogo real, no de una lista fija: si nadie ha
+  // publicado una cata, no tiene sentido ofrecer ese filtro.
+  const [destacadas, categorias] = await Promise.all([
+    listarDestacadas(),
+    listarCategorias(),
+  ]);
+
   return (
-    <div className="flex flex-col flex-1 items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex flex-1 w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert h-5 w-[100px]"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
+    <>
+      {/*
+        El banner monta su propio contexto de apilamiento con `isolate`, para
+        que el z-index negativo del vídeo se quede dentro de la sección y no
+        acabe detrás del fondo de la página.
+
+        El carbón de base es lo que se ve mientras el vídeo carga y lo que
+        queda si no llega a cargar: el titular tiene que leerse igual.
+      */}
+      <section className="relative isolate overflow-hidden bg-carbon">
+        <VideoFondo />
+
+        {/*
+          Velo sobre el vídeo. Sin él, un fotograma claro dejaría el texto
+          blanco ilegible; el degradado carga más abajo, que es donde están
+          los botones.
+        */}
+        <div
+          aria-hidden
+          className="absolute inset-0 -z-10 bg-gradient-to-b from-carbon/60 via-carbon/65 to-carbon/80"
         />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the{" "}
-            <code className="rounded bg-black/[.06] px-1.5 py-0.5 font-mono text-[0.9em] dark:bg-white/[.08]">
-              page.tsx
-            </code>{" "}
-            file.
+
+        <div className="mx-auto max-w-6xl px-4 py-28 text-center sm:py-36">
+          {/*
+            La primera línea es fija y la segunda se escribe sola, con las
+            mismas frases que rotaba el sitio en WordPress. La frase inicial
+            viaja ya escrita en el HTML, así que el h1 nunca llega vacío a un
+            buscador.
+          */}
+          <h1 className="font-titulo text-4xl font-bold text-white drop-shadow-sm sm:text-6xl">
+            Tenemos filo para
+            {/*
+              Altura reservada para dos líneas en móvil y una en escritorio:
+              «Talleres de trabajo en equipo» parte en dos en pantalla
+              estrecha, y sin esta reserva el banner daría un salto cada vez
+              que el texto cambia de frase.
+            */}
+            <span className="mt-1 block min-h-[2.4em] sm:min-h-[1.2em]">
+              <TituloAnimado frases={FRASES} />
+            </span>
           </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
+
+          <p className="mx-auto mt-5 max-w-2xl text-lg text-white/85">
+            Catas, clases de cocina y recorridos gastronómicos de la mano de
+            anfitriones apasionados.
           </p>
+
+          {/* La búsqueda es la acción principal del banner; los enlaces
+              quedan debajo para quien prefiere mirar sin buscar. */}
+          <div className="mx-auto mt-8 max-w-xl">
+            <Buscador />
+          </div>
+
+          <div className="mt-6 flex flex-wrap justify-center gap-x-6 gap-y-2 text-sm">
+            <Link
+              href="/experiencias"
+              className="font-medium text-white/90 underline-offset-4 hover:underline"
+            >
+              Ver todas las experiencias
+            </Link>
+            <Link
+              href="/grupos"
+              className="font-medium text-white/90 underline-offset-4 hover:underline"
+            >
+              Algo para mi equipo
+            </Link>
+          </div>
         </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert h-[14px] w-4"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={14}
-            />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
-        </div>
-      </main>
-    </div>
+      </section>
+
+      {categorias.length > 0 && (
+        <Aparece>
+          <section className="mx-auto max-w-6xl px-4 py-14">
+            <h2 className="font-titulo text-2xl text-carbon">
+              Explora por tipo
+            </h2>
+
+            <ul className="mt-6 flex flex-wrap gap-3">
+              {categorias.map((categoria) => (
+                <li key={categoria.nombre}>
+                  <Link
+                    href={`/experiencias?category=${encodeURIComponent(categoria.nombre)}`}
+                    className="inline-block rounded-full border border-filo-200 px-5 py-2 text-sm font-medium text-carbon transition-colors hover:border-filo-500 hover:text-filo-600"
+                  >
+                    {categoria.nombre}
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          </section>
+        </Aparece>
+      )}
+
+      {destacadas.length > 0 && (
+        <Aparece>
+          <section className="mx-auto max-w-6xl px-4 pb-14">
+            <div className="flex items-end justify-between gap-4">
+              <h2 className="font-titulo text-2xl text-carbon">
+                Descubre experiencias
+              </h2>
+              <Link
+                href="/experiencias"
+                className="text-sm font-medium text-filo-600 hover:underline"
+              >
+                Ver todas
+              </Link>
+            </div>
+
+            <div className="mt-6 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+              {destacadas.slice(0, 6).map((experiencia) => (
+                <TarjetaExperiencia
+                  key={experiencia.id}
+                  experiencia={experiencia}
+                />
+              ))}
+            </div>
+          </section>
+        </Aparece>
+      )}
+    </>
   );
 }

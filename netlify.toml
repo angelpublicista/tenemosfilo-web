@@ -1,0 +1,44 @@
+# Despliegue del sitio publico de Tenemos Filo.
+#
+# El runtime de Next.js lo aporta @netlify/plugin-nextjs, fijado en
+# devDependencies. Netlify lo instalaria solo al detectar Next, pero fijarlo
+# evita que un cambio de version en su lado altere un build que ya funciona.
+
+[build]
+  command = "npm run build"
+  publish = ".next"
+
+[build.environment]
+  # Alineado con la version de Node de las otras aplicaciones del stack.
+  NODE_VERSION = "22"
+
+[[plugins]]
+  package = "@netlify/plugin-nextjs"
+
+# Las previews de rama no deben indexarse ni competir en buscadores con el
+# dominio real.
+[context.deploy-preview]
+  [context.deploy-preview.environment]
+    NEXT_PUBLIC_SITE_URL = "https://deploy-preview.tenemosfilo.com"
+
+[[headers]]
+  for = "/*"
+  [headers.values]
+    X-Content-Type-Options = "nosniff"
+    Referrer-Policy = "strict-origin-when-cross-origin"
+    X-Frame-Options = "SAMEORIGIN"
+    Strict-Transport-Security = "max-age=31536000; includeSubDomains"
+
+# El blog vive en WordPress, en su propio subdominio. Mantenemos /blog como
+# enlace estable por si algun dia se mueve.
+[[redirects]]
+  from = "/blog"
+  to = "https://blog.tenemosfilo.com"
+  status = 301
+  force = true
+
+[[redirects]]
+  from = "/blog/*"
+  to = "https://blog.tenemosfilo.com/:splat"
+  status = 301
+  force = true
