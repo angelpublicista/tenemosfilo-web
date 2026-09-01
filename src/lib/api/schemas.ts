@@ -187,7 +187,12 @@ export const CatalogoPublicoSchema = z.object({
   paymentsEnabled: z.boolean().default(false),
 });
 
-/** Datos firmados para abrir el checkout de Wompi. Nunca traen secretos. */
+/**
+ * Datos firmados para abrir el checkout de Wompi. Nunca traen secretos.
+ *
+ * `checkoutUrl` es solo la URL base del checkout; los demás campos son los
+ * parámetros que hay que colgarle. Los junta `lib/pagos.ts`.
+ */
 export const PagoSchema = z.object({
   checkoutUrl: z.string(),
   publicKey: z.string(),
@@ -195,6 +200,8 @@ export const PagoSchema = z.object({
   amountInCents: z.number().int(),
   reference: z.string(),
   signature: z.string(),
+  /** A dónde vuelve la persona tras pagar. Wompi lo trata como opcional. */
+  redirectUrl: z.string().optional(),
   environment: z.enum(["SANDBOX", "PRODUCTION"]),
 });
 

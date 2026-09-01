@@ -5,6 +5,7 @@ import { z } from "zod";
 import { ApiError } from "@/lib/api/client";
 import { obtenerExperiencia, pagosActivos } from "@/lib/api/experiences";
 import { crearReservaPublica } from "@/lib/api/reservations";
+import { urlDeCheckout } from "@/lib/pagos";
 import { calcularTotal } from "@/lib/precios";
 
 /**
@@ -167,7 +168,10 @@ export async function reservar(
       specialRequirements: entrada.requerimientos || undefined,
     });
 
-    const urlPago = reserva.payment?.checkoutUrl;
+    // `checkoutUrl` por si solo es la URL base del checkout, sin los datos de
+    // la transaccion: hay que colgarle los parametros firmados que vienen en
+    // el resto de `payment`.
+    const urlPago = reserva.payment ? urlDeCheckout(reserva.payment) : undefined;
 
     if (!urlPago) {
       // La pasarela estaba activa al empezar pero el API no devolvió
